@@ -1,0 +1,35 @@
+-- BAN UN UTILISATEUR DE TYPE 'VOLONTAIRE' ET L'ENLEVE DE TOUTES LES TABLES (SAUF UTILISATEUR)
+DROP PROCEDURE IF EXISTS ban_volontaire;
+DELIMITER |
+CREATE PROCEDURE ban_volontaire(IN idVo INT)
+BEGIN
+     DECLARE idT INT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+            BEGIN
+                SELECT 'ERREUR LORS DE L EXECUTION DE LA REQUETE';
+                ROLLBACK;
+            END;
+
+    SELECT idRole INTO idT 
+    FROM UTILISATEUR 
+    WHERE id = idVo;
+
+    IF idT = 1 THEN
+        SELECT 'ERREUR CE N EST PAS UN VOLONTAIRE';
+    END IF;
+    IF idT = 2 THEN
+        START TRANSACTION;
+            SELECT 'AVANT ENLEVER VOLONTAIRE TOUS CHANTIERS';
+            CALL enlever_volontaire_tous_chantiers(idVo);
+            SELECT 'APRèS ENLEVER VOLONTAIRE TOUS CHANTIERS';
+            DELETE FROM WOOFING WHERE idVolontaire = idVo;
+            SELECT 'APRES WOOFING';
+            DELETE FROM NIVEAU WHERE idUtilisateur = idVo;
+            SELECT 'APRES NIVEAU';
+            UPDATE UTILISATEUR 
+            SET ban = 1;
+        COMMIT;
+    END IF;
+END|
+DELIMITER ;
